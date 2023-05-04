@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>车辆系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+    <template>
+        <el-tabs v-model="activeName" @tab-click="handleClick" :tab-position="tabPosition">
+            <el-tab-pane label="车辆管理" name="first">
+                <el-button type="primary" class="butT" @click="carHandleCreate()">新建</el-button>
+                <el-table
+                        border
+                        :data="carDataList"
+                        style="width: 100%"
+                        :default-sort="{prop: 'date', order: 'descending'}"
+                        :row-class-name="tableRowClassName"
+                        size="small" current-row-key="carId"
+                >
+                    <el-table-column type="index" align="center" label="序号" sortable sortable width="80"></el-table-column>
+                    <el-table-column prop="maxCapacity" label="最大载客量" align="center"></el-table-column>
+                    <el-table-column prop="carType" label="车类" align="center"></el-table-column>
+
+                    <el-table-column label="操作" align="center">
+                        <template slot-scope="scope">
+                            <el-button type="primary" size="mini" @click="carHandleUpdate(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="mini" @click="carHandleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- 新增标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="新增车辆信息" :visible.sync="carDialogFormVisible">
+                        <el-form ref="dataAddForm" :model="carFormData" :rules="rules" label-position="right">
+                            <el-row>
+                                <el-col :span="6">
+                                <el-form-item label="最大载客量" prop="maxCapacity">
+                                    <el-input v-model="carFormData.maxCapacity" clearable></el-input>
+                                </el-form-item>
+                                </el-col>
+                                <el-col :span="6" :offset="2">
+                                <el-form-item label="车类" prop="carType">
+                                    <el-input v-model="carFormData.carType" clearable></el-input>
+                                </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="carDialogFormVisible = false">取消</el-button>
+                            <el-button type="primary" @click="carHandleAdd()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+                </div>
+
+                <!-- 编辑标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="修改车辆信息" :visible.sync="carDialogFormVisible4Edit">
+                        <el-form ref="dataEditForm" :model="carFormData" :rules="rules" label-position="right">
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="最大载客量" prop="maxCapacity">
+                                        <el-input v-model="carFormData.maxCapacity"></el-input>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="6" :offset="2">
+                                    <el-form-item label="车类" prop="carType">
+                                        <el-input v-model="carFormData.carType"></el-input>
+                                    </el-form-item>
+                                </el-col>
+
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="carDialogFormVisible4Edit = false">取消</el-button>
+                            <el-button type="primary" @click="carHandleEdit()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+
+                </div>
+
+            </el-tab-pane>
+
+            <el-tab-pane label="路线管理" name="second">
+                <el-button type="primary" class="butT" @click="routeHandleCreate()">新建</el-button>
+                <el-table
+                        border
+                        :data="routeDataList"
+                        style="width: 100%"
+                        :default-sort="{prop: 'date', order: 'descending'}"
+                        :row-class-name="tableRowClassName"
+                        size="small" current-row-key="routeId"
+                >
+                    <el-table-column type="index" align="center" label="序号" sortable width="80"></el-table-column>
+                    <el-table-column prop="timeArrival" label="到达时间"></el-table-column>
+                    <el-table-column prop="timeDepa" label="出发时间"></el-table-column>
+                    <el-table-column prop="origin" label="出发地" align="center"></el-table-column>
+                    <el-table-column prop="desti" label="到达地" align="center"></el-table-column>
+
+
+                    <el-table-column label="操作" align="center">
+                        <template slot-scope="scope">
+                            <el-button type="primary" size="mini" @click="routeHandleUpdate(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="mini" @click="routeHandleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- 新增标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="新增路线信息" :visible.sync="routeDialogFormVisible">
+                        <el-form ref="dataAddForm" :model="routeFormData" :rules="rules" label-position="top">
+                            <el-row>
+                                <el-col :span="6">
+                                <el-form-item label="到达时间" prop="timeArrival">
+                                    <el-date-picker
+                                            v-model="routeFormData.timeArrival"
+                                            type="datetime"
+                                            value-format="yyyy-MM-dd HH:mm:ss"
+                                            placeholder="选择到达时间">
+                                    </el-date-picker>
+                                </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                <el-form-item label="出发时间" prop="timeDepa">
+                                    <el-date-picker
+                                            v-model="routeFormData.timeDepa"
+                                            type="datetime"
+                                            value-format="yyyy-MM-dd HH:mm:ss"
+                                            placeholder="选择出发时间">
+                                    </el-date-picker>
+                                </el-form-item>
+                                </el-col>
+                                <el-col :span="20">
+                                <el-form-item label="出发地" prop="origin">
+                                    <el-input v-model="routeFormData.origin" clearable></el-input>
+                                </el-form-item>
+                                </el-col>
+                                <el-col :span="20">
+                                <el-form-item label="到达地" prop="desti">
+                                    <el-input v-model="routeFormData.desti" clearable></el-input>
+                                </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="routeDialogFormVisible = false">取消</el-button>
+                            <el-button type="primary" @click="routeHandleAdd()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+                </div>
+
+                <!-- 修改标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="新增路线信息" :visible.sync="routeDialogFormVisible4Edit">
+                        <el-form ref="dataAddForm" :model="routeFormData" :rules="rules" label-position="top">
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="到达时间" prop="timeArrival">
+                                        <el-date-picker
+                                                v-model="routeFormData.timeArrival"
+                                                type="datetime"
+                                                value-format="yyyy-MM-dd HH:mm:ss"
+                                                placeholder="选择到达时间">
+                                        </el-date-picker>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="出发时间" prop="timeDepa">
+                                        <el-date-picker
+                                                v-model="routeFormData.timeDepa"
+                                                type="datetime"
+                                                value-format="yyyy-MM-dd HH:mm:ss"
+                                                placeholder="选择出发时间">
+                                        </el-date-picker>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="20">
+                                    <el-form-item label="出发地" prop="origin">
+                                        <el-input v-model="routeFormData.origin" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="20">
+                                    <el-form-item label="到达地" prop="desti">
+                                        <el-input v-model="routeFormData.desti" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="routeDialogFormVisible4Edit = false">取消</el-button>
+                            <el-button type="primary" @click="routeHandleEdit()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+                </div>
+
+            </el-tab-pane>
+
+            <el-tab-pane label="车票管理" name="third">
+                <el-button type="primary" class="butT" @click="ticketHandleCreate()">新建</el-button>
+                <el-table
+                        border
+                        :data="ticketDataList"
+                        style="width: 100%"
+                        :default-sort="{prop: 'date', order: 'descending'}"
+                        :row-class-name="tableRowClassName"
+                        size="small" current-row-key="ticketId"
+                >
+                    <el-table-column type="index" align="center" label="序号" sortable width="80"></el-table-column>
+                    <el-table-column prop="carId" label="车辆号" align="center"></el-table-column>
+                    <el-table-column prop="routeId" label="路线号" align="center"></el-table-column>
+                    <el-table-column prop="fares" label="票价" align="center"></el-table-column>
+                    <el-table-column prop="sold" label="已售数量" align="center"></el-table-column>
+
+
+                    <el-table-column label="操作" align="center">
+                        <template slot-scope="scope">
+                            <el-button type="primary" size="mini" @click="ticketHandleUpdate(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="mini" @click="ticketHandleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- 新增标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="新增车票信息" :visible.sync="ticketDialogFormVisible">
+                        <el-form ref="dataAddForm" :model="ticketFormData" :rules="rules" label-position="top">
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="车辆号" prop="carId">
+                                        <el-select v-model="ticketFormData.carId" placeholder="请选择车辆号">
+                                            <el-option v-for="value in ticketDataList" :label="value.carId"
+                                                       :value="value.carId"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="6">
+                                    <el-form-item label="路线号" prop="carId">
+                                        <el-select v-model="ticketFormData.routeId" placeholder="请选路线票号">
+                                            <el-option v-for="value in routeDataList" :label="value.routeId"
+                                                       :value="value.routeId"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="20">
+                                    <el-form-item label="票价" prop="fares">
+                                        <el-input v-model="ticketFormData.fares" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="20">
+                                    <el-form-item label="已售数量" prop="sold">
+                                        <el-input v-model="ticketFormData.sold" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="ticketDialogFormVisible = false">取消</el-button>
+                            <el-button type="primary" @click="ticketHandleAdd()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+                </div>
+
+                <!-- 修改标签弹层 -->
+                <div class="add-form">
+                    <el-dialog title="新增车票信息" :visible.sync="ticketDialogFormVisible4Edit">
+                        <el-form ref="dataAddForm" :model="ticketFormData" :rules="rules" label-position="top">
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="车辆号" prop="carId">
+                                        <el-select v-model="ticketFormData.carId" placeholder="请选择车辆号">
+                                            <el-option v-for="value in ticketDataList" :label="value.carId"
+                                                       :value="value.carId"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="6">
+                                    <el-form-item label="路线号" prop="carId">
+                                        <el-select v-model="ticketFormData.routeId" placeholder="请选择路线号">
+                                            <el-option v-for="value in routeDataList" :label="value.routeId"
+                                                       :value="value.routeId"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="20">
+                                    <el-form-item label="票价" prop="fares">
+                                        <el-input v-model="ticketFormData.fares" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+
+                                <el-col :span="20">
+                                    <el-form-item label="已售数量" prop="sold">
+                                        <el-input v-model="ticketFormData.sold" clearable></el-input>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+
+                        <div slot="footer" class="dialog-footer">
+                            <el-button @click="ticketDialogFormVisible4Edit = false">取消</el-button>
+                            <el-button type="primary" @click="ticketHandleEdit()">确定</el-button>
+                        </div>
+
+                    </el-dialog>
+                </div>
+            </el-tab-pane>
+        </el-tabs>
+    </template>
+</div>
+
+<style>
+    .el-table .success-row {
+        background: #f0f9eb;
+    }
+</style>
+
+<script>
+    //url前默认值,之后的url只需要写之后的就行
+    const instance = axios.create({
+        baseURL: 'http://192.168.192.236:8080/oracle/'
+    });
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                //默认显示
+                activeName: 'first',
+                //导航栏样式
+                tabPosition: 'left',
+
+                //车辆列表变量
+                carDataList: [],
+                //车辆表单变量
+                carFormData: {},
+                //车辆添加表单是否可见
+                carDialogFormVisible: false,
+                //车辆编辑表单是否可见
+                carDialogFormVisible4Edit: false,
+
+                //时间值
+                pickerOptions: {},
+                //路线列表变量
+                routeDataList: [],
+                //路线表单变量
+                routeFormData: {},
+                //路线添加表单是否可见
+                routeDialogFormVisible: false,
+                //路线编辑表单是否可见
+                routeDialogFormVisible4Edit: false,
+
+                //车票列表变量
+                ticketDataList: [],
+                //车票表单变量
+                ticketFormData: {},
+                //车票添加表单是否可见
+                ticketDialogFormVisible: false,
+                //车票编辑表单是否可见
+                ticketDialogFormVisible4Edit: false,
+
+            }
+        },
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.carGetAll();
+        },
+        methods: {
+            onSubmit() {
+                console.log('submit!');
+            },
+            //表单颜色
+            tableRowClassName({row, rowIndex}) {
+                if (rowIndex % 2 !== 0) {
+                    return 'success-row';
+                }
+            },
+
+            //导航栏
+            handleClick(tab, event) {
+                if (tab.name === "second") {
+                    this.routeGetAll();
+                } else if (tab.name === "third") {
+                    this.routeGetAll();
+                    this.ticketGetAll();
+                }
+            },
+
+            //查询car列表
+            carGetAll() {
+                //发送get请求
+                instance.get("cars").then(resp => {
+                    this.carDataList = resp.data.data;
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //弹出car添加窗口
+            carHandleCreate() {
+                this.carDialogFormVisible = true;
+                //清空表单
+                this.carResetForm();
+            },
+            //重置表单
+            carResetForm() {
+                //清空表单数据
+                this.carFormData = {};
+            },
+            //添加
+            carHandleAdd() {
+                instance.post("/cars", this.carFormData).then(resp => {
+                    if (resp.data.code === 20011) {
+                        //关闭弹窗
+                        this.carDialogFormVisible = false;
+                        this.$message.success("添加成功")
+                    } else if (resp.data.code === 20010) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.carGetAll();
+                });
+            },
+            //弹出修改窗口
+            carHandleUpdate(row) {
+                //查询数据, 根据id查询
+                instance.get("/cars/" + row.carId).then(resp => {
+                    if (resp.data.code === 20041) {
+                        this.carFormData = resp.data.data;
+                        //显示弹窗
+                        this.carDialogFormVisible4Edit = true;
+                    } else {
+                        this.$message.error(resp.data.msg)
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //点击修改
+            carHandleEdit() {
+                instance.put("/cars", this.carFormData).then(resp => {
+                    if (resp.data.code === 20031) {
+                        //关闭弹窗
+                        this.carDialogFormVisible4Edit = false;
+                        this.$message.success("修改成功")
+                    } else if (resp.data.code === 20030) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.carGetAll();
+                });
+            },
+            // 删除
+            carHandleDelete(row) {
+                //弹出消息框
+                this.$confirm(
+                    "此操作将永久删除当前数据, 是否继续?", "提示", {type: 'info'}
+                ).then(() => {
+                    //确定删除
+                    instance.delete("/cars/" + row.carId).then(resp => {
+                        if (resp.data.code === 20021) {
+                            this.$message.success("删除成功")
+                        } else {
+                            this.$message.error("删除失败")
+                        }
+                    }).catch(error => {
+                        console.log(error.toJSON());
+                    }).finally(() => {
+                        //一定会执行的
+                        this.carGetAll();
+                    });
+                }).catch(() => {
+                    //取消删除
+                    this.$message.info("取消删除")
+                })
+            },
+
+            //查询route列表
+            routeGetAll() {
+                //发送get请求
+                instance.get("routes").then(resp => {
+                    this.routeDataList = resp.data.data;
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //弹出route添加窗口
+            routeHandleCreate() {
+                this.routeDialogFormVisible = true;
+                //清空表单
+                this.routeResetForm();
+            },
+            //重置表单
+            routeResetForm() {
+                //清空表单数据
+                this.routeFormData = {};
+            },
+            //添加
+            routeHandleAdd() {
+                instance.post("/routes", this.routeFormData).then(resp => {
+                    if (resp.data.code === 20011) {
+                        //关闭弹窗
+                        this.routeDialogFormVisible = false;
+                        this.$message.success("添加成功")
+                    } else if (resp.data.code === 20010) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.routeGetAll();
+                });
+            },
+            //弹出修改窗口
+            routeHandleUpdate(row) {
+                //查询数据, 根据id查询
+                instance.get("/routes/" + row.routeId).then(resp => {
+                    if (resp.data.code === 20041) {
+                        this.routeFormData = resp.data.data;
+                        //显示弹窗
+                        this.routeDialogFormVisible4Edit = true;
+                    } else {
+                        this.$message.error(resp.data.msg)
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //点击修改
+            routeHandleEdit() {
+                instance.put("/routes", this.routeFormData).then(resp => {
+                    if (resp.data.code === 20031) {
+                        //关闭弹窗
+                        this.routeDialogFormVisible4Edit = false;
+                        this.$message.success("修改成功")
+                    } else if (resp.data.code === 20030) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.routeGetAll();
+                });
+            },
+            // 删除
+            routeHandleDelete(row) {
+                //弹出消息框
+                this.$confirm(
+                    "此操作将永久删除当前数据, 是否继续?", "提示", {type: 'info'}
+                ).then(() => {
+                    //确定删除
+                    instance.delete("/routes/" + row.routeId).then(resp => {
+                        if (resp.data.code === 20021) {
+                            this.$message.success("删除成功")
+                        } else {
+                            this.$message.error("删除失败")
+                        }
+                    }).catch(error => {
+                        console.log(error.toJSON());
+                    }).finally(() => {
+                        //一定会执行的
+                        this.routeGetAll();
+                    });
+                }).catch(() => {
+                    //取消删除
+                    this.$message.info("取消删除")
+                })
+            },
+
+
+            //查询ticket列表
+            ticketGetAll() {
+                //发送get请求
+                instance.get("tickets").then(resp => {
+                    this.ticketDataList = resp.data.data;
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //弹出ticket添加窗口
+            ticketHandleCreate() {
+                this.ticketDialogFormVisible = true;
+                //清空表单
+                this.ticketResetForm();
+            },
+            //重置表单
+            ticketResetForm() {
+                //清空表单数据
+                this.ticketFormData = {};
+            },
+            //添加
+            ticketHandleAdd() {
+                instance.post("/tickets", this.ticketFormData).then(resp => {
+                    if (resp.data.code === 20011) {
+                        //关闭弹窗
+                        this.ticketDialogFormVisible = false;
+                        this.$message.success("添加成功")
+                    } else if (resp.data.code === 20010) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.ticketGetAll();
+                });
+            },
+            //弹出修改窗口
+            ticketHandleUpdate(row) {
+                //查询数据, 根据id查询
+                instance.get("/tickets/" + row.ticketId).then(resp => {
+                    if (resp.data.code === 20041) {
+                        this.ticketFormData = resp.data.data;
+                        //显示弹窗
+                        this.ticketDialogFormVisible4Edit = true;
+                    } else {
+                        this.$message.error(resp.data.msg)
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                });
+            },
+            //点击修改
+            ticketHandleEdit() {
+                instance.put("/tickets", this.ticketFormData).then(resp => {
+                    if (resp.data.code === 20031) {
+                        //关闭弹窗
+                        this.ticketDialogFormVisible4Edit = false;
+                        this.$message.success("修改成功")
+                    } else if (resp.data.code === 20030) {
+                        const msgtest = resp.data.msg;
+                        this.$message.error(msgtest)
+                    } else {
+                        this.$message.error("系统异常, 请稍后重试")
+                    }
+                }).catch(error => {
+                    console.log(error.toJSON());
+                }).finally(() => {
+                    //一定会执行的
+                    this.ticketGetAll();
+                });
+            },
+            // 删除
+            ticketHandleDelete(row) {
+                //弹出消息框
+                this.$confirm(
+                    "此操作将永久删除当前数据, 是否继续?", "提示", {type: 'info'}
+                ).then(() => {
+                    //确定删除
+                    instance.delete("/tickets/" + row.ticketId).then(resp => {
+                        if (resp.data.code === 20021) {
+                            this.$message.success("删除成功")
+                        } else {
+                            this.$message.error("删除失败")
+                        }
+                    }).catch(error => {
+                        console.log(error.toJSON());
+                    }).finally(() => {
+                        //一定会执行的
+                        this.ticketGetAll();
+                    });
+                }).catch(() => {
+                    //取消删除
+                    this.$message.info("取消删除")
+                })
+            },
+        }
+
+
+    });
+</script>
+</body>
+</html>
