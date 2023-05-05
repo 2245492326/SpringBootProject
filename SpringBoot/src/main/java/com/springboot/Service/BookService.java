@@ -5,7 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Transactional
+
+@Transactional //事务注解
 public interface BookService {
 
     boolean addBook(Book book);

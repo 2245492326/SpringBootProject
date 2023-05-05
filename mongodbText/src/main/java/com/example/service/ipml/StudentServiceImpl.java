@@ -1,18 +1,22 @@
-package org.service.ipml;
+package com.example.service.ipml;
 
-import org.dao.StudentDao;
-import org.entity.Bicycle;
-import org.entity.Student;
-import org.service.StudentService;
+
+import com.example.dao.BicycleDao;
+import com.example.dao.StudentDao;
+import com.example.entity.Bicycle;
+import com.example.entity.Student;
+import com.example.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class StudentServiceImpl implements StudentService {
 
     @Autowired
     public StudentDao studentDao;
+
 
     @Override
     public boolean addStudent(Student student) {
@@ -44,18 +48,22 @@ public class StudentServiceImpl implements StudentService {
         }
     }
 
+
+
     @Override
     public List<Student> getStudentList(int pageSize, int pageNum) {
         return studentDao.pagingTest(pageSize, pageNum);
     }
 
-    @Override
-    public Student getStudentById(int id) {
-        return studentDao.studentById(id);
-    }
+    @Autowired
+    private BicycleDao bicycleDao;
 
     @Override
-    public Bicycle getStudentByBicycleId(int bicycleId) {
-        return studentDao.studentByBicycle(bicycleId);
+    public Student getStudentById(int id) {
+        Student student = studentDao.studentById(id);
+        Bicycle bicycle = bicycleDao.bicycleById(student.getCarId());
+        student.setBicycle(bicycle);
+        return student;
     }
+
 }

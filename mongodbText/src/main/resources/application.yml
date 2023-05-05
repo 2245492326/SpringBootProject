@@ -1,0 +1,7 @@
+spring:
+  data:
+    mongodb:
+      #uri: mongodb://127.0.0.1:27017/MongoDBTest
+      database: mydb2
+      host: 192.168.88.128
+      port: 27017

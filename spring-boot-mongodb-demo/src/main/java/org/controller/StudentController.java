@@ -13,6 +13,8 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/service")
+@RestController
+@CrossOrigin
 public class StudentController {
 
     @Autowired
@@ -20,7 +22,6 @@ public class StudentController {
 
     //添加学生信息
     @PostMapping("/add")
-    @ResponseBody
     public Result addStudent(@RequestBody Student student) {
         boolean flag = studentService.addStudent(student);
         Integer code = flag ? Code.POST_OK : Code.POST_ERR;
@@ -45,7 +46,6 @@ public class StudentController {
     }
 
     @GetMapping("/getById")
-    @ResponseBody
     public Result getStudentById(int id){
         Student student = studentService.getStudentById(id);
         Integer code = student != null ? Code.GET_OK : Code.GET_ERR;
