@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class MyCommandRunner implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(MyCommandRunner.class);
+
     @Value("${OpenURL.web.loginUrl}")
     private String loginUrl;
 

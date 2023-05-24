@@ -13,7 +13,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/service")
-@RestController
+@RestController//返回json格式
 @CrossOrigin
 public class StudentController {
 
@@ -24,6 +24,7 @@ public class StudentController {
     @PostMapping("/add")
     public Result addStudent(@RequestBody Student student) {
         boolean flag = studentService.addStudent(student);
+
         Integer code = flag ? Code.POST_OK : Code.POST_ERR;
         String msg =flag? "添加成功" : "添加失败";
         return new Result(code, null, msg);
@@ -32,6 +33,7 @@ public class StudentController {
     @PostMapping("/update")
     public Result updateStudent(@RequestBody Student student) {
         boolean flag = studentService.updateStudent(student);
+
         Integer code = flag ? Code.POST_OK : Code.POST_ERR;
         String msg = flag? "修改成功" : "修改失败";
         return new Result(code, null, msg);
@@ -40,6 +42,7 @@ public class StudentController {
     @GetMapping("/getList")
     public Result getStudentList(int pageSize,int pageNum){
         List<Student> students =studentService.getStudentList(pageSize,pageNum);
+
         Integer code = students != null ? Code.GET_OK : Code.GET_ERR;
         String msg = students != null ? "查询成功" : "查询失败";
         return new Result(code, students, msg);
@@ -48,6 +51,7 @@ public class StudentController {
     @GetMapping("/getById")
     public Result getStudentById(int id){
         Student student = studentService.getStudentById(id);
+
         Integer code = student != null ? Code.GET_OK : Code.GET_ERR;
         String msg = student != null ? "查询成功" : "查询失败";
         return new Result(code, student,msg);
@@ -56,6 +60,7 @@ public class StudentController {
     @GetMapping("/getByBicycleId")
     public Result getStudentByBicycleId(int bicycleId){
         Bicycle bicycle = studentService.getStudentByBicycleId(bicycleId);
+
         Integer code =bicycle != null ? Code.GET_OK : Code.GET_ERR;
         String msg = bicycle != null ? "查询成功" : "查询失败";
         return new Result(code, bicycle,msg);
